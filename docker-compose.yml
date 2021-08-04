@@ -20,3 +20,13 @@ services:
       - ./search-service:/app
     ports:
       - "3020:5000"
+  client:
+    container_name: client
+    build:
+        dockerfile: Dockerfile.dev
+        context: ./client
+    volumes:
+        - /app/node_modules
+        - ./client:/app
+    ports:
+        - "3000:3000"
