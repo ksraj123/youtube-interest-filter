@@ -1,5 +1,15 @@
 version: '3'
 services:
+  postgres:
+    container_name: postgres
+    image: 'postgres:latest'
+  nginx:
+    restart: always
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./nginx
+    ports:
+      - '3050:80'
   results-service:
     container_name: results-service
     build:
@@ -8,18 +18,25 @@ services:
     volumes:
       - /app/node_modules
       - ./results-service:/app
-    ports:
-      - "3010:5000"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PGUSER=postgres
+      - PGHOST=postgres
+      - PGDATABASE=postgres
+      - PGPASSWORD=postgres_password
+      - PGPORT=5432
   search-service:
     container_name: search-service
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     build:
       dockerfile: Dockerfile.dev
       context: ./search-service
     volumes:
       - /app/node_modules
       - ./search-service:/app
-    ports:
-      - "3020:5000"
   client:
     container_name: client
     build:
@@ -28,5 +45,3 @@ services:
     volumes:
         - /app/node_modules
         - ./client:/app
-    ports:
-        - "3000:3000"
