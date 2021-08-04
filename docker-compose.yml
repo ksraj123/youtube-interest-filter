@@ -1,8 +1,5 @@
 version: '3'
 services:
-  postgres:
-    container_name: postgres
-    image: 'postgres:latest'
   nginx:
     restart: always
     build:
@@ -18,19 +15,11 @@ services:
     volumes:
       - /app/node_modules
       - ./results-service:/app
-    environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - PGUSER=postgres
-      - PGHOST=postgres
-      - PGDATABASE=postgres
-      - PGPASSWORD=postgres_password
-      - PGPORT=5432
   search-service:
     container_name: search-service
     environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+      - ELASTIC_HOST=elasticsearch
+      - ELASTIC_PORT=9200
     build:
       dockerfile: Dockerfile.dev
       context: ./search-service
@@ -45,3 +34,22 @@ services:
     volumes:
         - /app/node_modules
         - ./client:/app
+  elasticsearch:
+    container_name: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.14.0
+    volumes:
+        - elastic-data:/usr/share/elasticsearch/data
+    environment:
+        - discovery.type=single-node
+    ports:
+        - 9300:9300
+        - 9200:9200
+  kibana:
+    image: kibana:7.14.0
+    environment: 
+        SERVER_NAME: kibana
+        ELASTICSEARCH_URL: http://elasticsearch:9200
+    ports:
+        - 5601:5601
+volumes:
+    elastic-data:
