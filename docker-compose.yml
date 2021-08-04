@@ -1,0 +1,22 @@
+version: '3'
+services:
+  results-service:
+    container_name: results-service
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./results-service
+    volumes:
+      - /app/node_modules
+      - ./results-service:/app
+    ports:
+      - "3010:5000"
+  search-service:
+    container_name: search-service
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./search-service
+    volumes:
+      - /app/node_modules
+      - ./search-service:/app
+    ports:
+      - "3020:5000"
