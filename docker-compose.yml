@@ -89,5 +89,21 @@ services:
         ELASTICSEARCH_URL: http://elasticsearch:9200
     ports:
         - 5601:5601
+
+   # logstash
+  logstash: 
+    image: docker.elastic.co/logstash/logstash:7.3.1
+    container_name: logstash
+    volumes: 
+         - ./logstash/pusher.conf:/usr/share/logstash/config/pusher.conf:ro
+         - ./logstash/logstash.yml:/usr/share/logstash/config/logstash.yml
+         - ./logstash/jdbc/postgresql-42.2.6.jar:/usr/share/logstash/logstash-core/lib/jars/postgresql-42.2.6.jar:ro
+    ports:
+        - '5044:5044'
+        - '9600:9600'
+    command: bash -c "/usr/share/logstash/bin/logstash-plugin install logstash-input-jdbc && logstash -f /usr/share/logstash/config/pusher.conf"
+    depends_on:
+        - elasticsearch
+
 volumes:
     elastic-data:
