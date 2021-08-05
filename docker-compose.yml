@@ -1,5 +1,16 @@
 version: '3'
 services:
+
+  postgres:
+    container_name: postgres
+    image: 'postgres:latest'
+    environment: 
+      - POSTGRES_DB=youtube
+      - POSTGRES_USER=saurabh
+      - POSTGRES_PASSWORD=super_secret_password
+    ports:
+      - 5432:5432
+
   nginx:
     restart: always
     build:
@@ -7,6 +18,7 @@ services:
       context: ./nginx
     ports:
       - '3050:80'
+
   results-service:
     container_name: results-service
     build:
@@ -15,6 +27,7 @@ services:
     volumes:
       - /app/node_modules
       - ./results-service:/app
+
   search-service:
     container_name: search-service
     environment:
@@ -26,6 +39,23 @@ services:
     volumes:
       - /app/node_modules
       - ./search-service:/app
+
+  update-datastore-service:
+    container_name: update-datastore-service
+    build: 
+      dockerfile: Dockerfile.dev
+      context: ./update-datastore-service
+    environment:
+        - PGUSER=saurabh
+        - PGHOST=postgres
+        - PGDATABASE=youtube
+        - PGPASSWORD=super_secret_password
+        - PGPORT=5432
+        - SEARCH_TERM=cricket
+    volumes:
+        - /app/node_modules
+        - ./update-datastore-service:/app
+
   client:
     container_name: client
     build:
@@ -34,6 +64,7 @@ services:
     volumes:
         - /app/node_modules
         - ./client:/app
+
   elasticsearch:
     container_name: elasticsearch
     image: docker.elastic.co/elasticsearch/elasticsearch:7.14.0
@@ -44,6 +75,7 @@ services:
     ports:
         - 9300:9300
         - 9200:9200
+
   kibana:
     image: kibana:7.14.0
     environment: 
