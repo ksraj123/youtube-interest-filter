@@ -5,9 +5,9 @@ services:
     container_name: postgres
     image: 'postgres:latest'
     environment: 
-      - POSTGRES_DB=youtube
-      - POSTGRES_USER=saurabh
-      - POSTGRES_PASSWORD=super_secret_password
+      POSTGRES_DB: youtube
+      POSTGRES_USER: saurabh
+      POSTGRES_PASSWORD: super_secret_password
     ports:
       - 5432:5432
 
@@ -31,8 +31,8 @@ services:
   search-service:
     container_name: search-service
     environment:
-      - ELASTIC_HOST=elasticsearch
-      - ELASTIC_PORT=9200
+      ELASTIC_HOST: elasticsearch
+      ELASTIC_PORT: '9200'
     build:
       dockerfile: Dockerfile.dev
       context: ./search-service
@@ -46,12 +46,18 @@ services:
       dockerfile: Dockerfile.dev
       context: ./update-datastore-service
     environment:
-        - PGUSER=saurabh
-        - PGHOST=postgres
-        - PGDATABASE=youtube
-        - PGPASSWORD=super_secret_password
-        - PGPORT=5432
-        - SEARCH_TERM=cricket
+        PGUSER: saurabh
+        PGHOST: postgres
+        PGDATABASE: youtube
+        PGPASSWORD: super_secret_password
+        PGPORT: 5432
+        SEARCH_TERM: cricket
+        # API Keys Encoded
+        GOOGLE_API_KEYS: >
+          QUl6YVN5QjlUUDFpbV91Nk5KZlJ3a2VZeXZSbHVqa2ptQ2xCV0VJ
+          QUl6YVN5RFJBb0FMSkJaMlB2TWxzMWFHTlJpNkhFa2cwLVF3SlVr
+          QUl6YVN5RHRUREwwMEhOQks2TVFGLTU3eThqS1NaZjk5NGIzWC0w
+        MAX_RESULTS: '100'
     volumes:
         - /app/node_modules
         - ./update-datastore-service:/app
