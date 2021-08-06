@@ -1,4 +1,4 @@
-# Dashboard Service
+# Search Service
 
 Nginx routes requests on `/api/search` endpoint to the dashboard service and removes `/api`.
 
