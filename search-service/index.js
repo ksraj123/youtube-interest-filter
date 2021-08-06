@@ -1,38 +1,38 @@
 import express from 'express';
-import { Client } from '@elastic/elasticsearch';
-
-const elasticUrl = `http://${process.env.ELASTIC_HOST}:${process.env.ELASTIC_PORT}`;
-console.log(elasticUrl);
-
-const client = new Client({ node: elasticUrl });
+import { client, checkConnection } from './elasticserach.js';
 
 const app = express();
 
-const checkConnection = () => {
-    return new Promise(async (resolve) => {
-        console.log("Checking connection to ElasticSearch...");
-        let isConnected = false;
-        while (!isConnected) {
-            try {
-                await client.cluster.health({});
-                console.log("Successfully connected to ElasticSearch");
-                isConnected = true;
-            } catch (err) {
-                const sleep = 5000;
-                console.log(`Error Connecting to Elastic, Retrying in ${sleep} ms`);
-                await new Promise(resolve => setTimeout(resolve, sleep));
+app.get("/search", async (req, res) => {
+    const q = req.query.q;
+    const size = req.query.pgSize || 100;
+    const page = req.query.page || 0;
+
+    const search = await client.search({
+        index: 'video',
+        size: size,
+        from: page * size,
+        body: {
+            query: {
+                multi_match: {
+                    query: q,
+                    fields: ['title^3', 'description']
+                }
             }
         }
-        resolve(true);
-    });
-}
+    })
 
-app.get("/search", (req, res) => {
-    res.status(200).json({ "success": `search-service listening on port ${5000}` })
+    const hits = search.body.hits.hits;
+    res.status(200).json({ "success": search.body.hits.hits })
 });
 
 app.listen(5000, () => {
     console.log(`search-service listening on port ${5000}`);
 })
 
-checkConnection();
+
+const main = () => {
+    checkConnection();
+};
+
+main();
