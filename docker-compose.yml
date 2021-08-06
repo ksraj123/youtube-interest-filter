@@ -19,14 +19,19 @@ services:
     ports:
       - '3050:80'
 
-  results-service:
-    container_name: results-service
+  dashboard-service:
+    container_name: dashboard-service
     build:
       dockerfile: Dockerfile.dev
-      context: ./results-service
+      context: ./dashboard-service
     volumes:
       - /app/node_modules
-      - ./results-service:/app
+      - ./dashboard-service:/app
+    environment:
+      ELASTIC_HOST: elasticsearch
+      ELASTIC_PORT: '9200'
+    depends_on: 
+      - elasticsearch
 
   search-service:
     container_name: search-service
@@ -57,7 +62,8 @@ services:
           QUl6YVN5QjlUUDFpbV91Nk5KZlJ3a2VZeXZSbHVqa2ptQ2xCV0VJ
           QUl6YVN5RFJBb0FMSkJaMlB2TWxzMWFHTlJpNkhFa2cwLVF3SlVr
           QUl6YVN5RHRUREwwMEhOQks2TVFGLTU3eThqS1NaZjk5NGIzWC0w
-        MAX_RESULTS: '100'
+        SEED_COUNT: '1000'
+        UPDATE_FREQUENCY: '1000000000000000'
     volumes:
         - /app/node_modules
         - ./update-datastore-service:/app
@@ -65,7 +71,7 @@ services:
   client:
     container_name: client
     build:
-        dockerfile: Dockerfile.dev
+        dockerfile: Dockerfile
         context: ./client
     volumes:
         - /app/node_modules
