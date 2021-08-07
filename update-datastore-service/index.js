@@ -17,14 +17,20 @@ const getPublishedAfter = async () => {
 }
 
 const updateDatastore = async () => {
-    const dbEntries = await getNumEntriesDB();
-    if (dbEntries !== 0 && dbEntries < Number(process.env.SEED_COUNT)) {
-        return await seedDb();
+    try {
+        const dbEntries = await getNumEntriesDB();
+        if (dbEntries !== 0 && dbEntries < Number(process.env.SEED_COUNT)) {
+            return await seedDb();
+        }
+        const publishedAfter = new Date(await getPublishedAfter());
+        publishedAfter.setSeconds(publishedAfter.getSeconds() + 1);
+        const videos = await getResults({publishedAfter: publishedAfter.toISOString()});
+        if (videos && videos.length) {
+            await bulkInsertToDb(videos);
+        }
+    } catch (err) {
+        console.log('Error encounterend updating the datastore.');
     }
-    const publishedAfter = new Date(await getPublishedAfter());
-    publishedAfter.setSeconds(publishedAfter.getSeconds() + 1);
-    const videos = await getResults({publishedAfter: publishedAfter.toISOString()});
-    await bulkInsertToDb(videos);
 }
 
 const main = async () => {

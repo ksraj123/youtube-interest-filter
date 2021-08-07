@@ -18,6 +18,8 @@ Nginx is exposed on port `3050`, the client could be reached at `localhost:3050`
 
 ## Google Youtube API Considerations
 
+Google provides usage const upto 10,000 perday across all the api keys in a project, a call to youtube v3 api to get search result is a cost of 100 units.
+
 - The Youtube API retuns results in a paginated form, the number of responses in a page could be set with `maxResults` property but it could be only between `0` and `50`.
 
 - The results could be ordered with the `order` property which could take in the following values, `date`, `rating`, `relavence`, `title`, `videoCount`, `viewCount`. The `date` option given search results in reverse cronological order i.e. newest resutls first.

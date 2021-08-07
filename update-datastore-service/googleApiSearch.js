@@ -41,13 +41,15 @@ const getResults = async (paramUpdates) => {
         return findings;
     } catch (err) {
         if (retries > 0) {
-            console.error('Error: call to Google API failed, trying with different key');
-            currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length;
-            retries--;
-            return await getResults(paramUpdates);
+            if (JSON.stringify(err?.response?.data?.error).indexOf('quotaExceeded') !== -1) {
+                console.error('Error: quota execeeded for API key, trying with different key');
+                currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length;
+                retries--;
+                return await getResults(paramUpdates);
+            }
         } else {
-            console.error('Error: Call to Google API failed');
-            console.error(err);
+            console.error('Error: Call to Google API failed.');
+            console.error(err.response.data);
         }
     }
 }

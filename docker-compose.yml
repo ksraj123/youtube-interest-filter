@@ -1,6 +1,7 @@
 version: '3'
 services:
 
+  # Postgres - Primary Source of truth
   postgres:
     container_name: postgres
     image: 'postgres:latest'
@@ -8,9 +9,49 @@ services:
       POSTGRES_DB: youtube
       POSTGRES_USER: saurabh
       POSTGRES_PASSWORD: super_secret_password
+    # postgres exposed for connecting pg-admin or other tools to db.
     ports:
       - 5432:5432
 
+  # Elastic Search - Additional index over primary SQL datastore to make search efficient and faster
+  # Apart from the the service writing data from Google API, all micro services interact with elastic
+  # as its easliy scalable by increasing nodes and shards in the cluster.
+  elasticsearch:
+    container_name: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.14.0
+    volumes:
+        - elastic-data:/usr/share/elasticsearch/data
+    environment:
+        - discovery.type=single-node
+    ports:
+        - 9300:9300
+        - 9200:9200
+
+  # logstash - automatically syncs data from postgres to elastic
+  logstash: 
+    image: docker.elastic.co/logstash/logstash:7.3.1
+    container_name: logstash
+    volumes: 
+          - ./logstash/pusher.conf:/usr/share/logstash/config/pusher.conf:ro
+          - ./logstash/logstash.yml:/usr/share/logstash/config/logstash.yml
+          - ./logstash/jdbc/postgresql-42.2.6.jar:/usr/share/logstash/logstash-core/lib/jars/postgresql-42.2.6.jar:ro
+    ports:
+        - '5044:5044'
+        - '9600:9600'
+    command: bash -c "/usr/share/logstash/bin/logstash-plugin install logstash-input-jdbc && logstash -f /usr/share/logstash/config/pusher.conf"
+    depends_on:
+        - elasticsearch
+
+  # kibana - interface for directly interacting with elastic to debugging and testing - its to elastic, what pgAdmin is to postgres
+  kibana:
+    image: kibana:7.14.0
+    environment: 
+        SERVER_NAME: kibana
+        ELASTICSEARCH_URL: http://elasticsearch:9200
+    ports:
+        - 5601:5601
+
+  # nginx - routes requests to appropriate microservices depending upon endpoint and serves static assets
   nginx:
     restart: always
     build:
@@ -19,6 +60,7 @@ services:
     ports:
       - '3050:80'
 
+  # dashboard micro service - interacts with elastic and returns paginated response for latest entries
   dashboard-service:
     container_name: dashboard-service
     build:
@@ -33,6 +75,7 @@ services:
     depends_on: 
       - elasticsearch
 
+  # Search micro service - interacts with elastic and searches for the a search term, retusn reponses in a paginated form
   search-service:
     container_name: search-service
     environment:
@@ -45,6 +88,7 @@ services:
       - /app/node_modules
       - ./search-service:/app
 
+  # Update Datastore micro service - interacts with google api and bulk writes results into postgres
   update-datastore-service:
     container_name: update-datastore-service
     build: 
@@ -59,15 +103,17 @@ services:
         SEARCH_TERM: cricket
         # API Keys Encoded
         GOOGLE_API_KEYS: >
-          QUl6YVN5QjlUUDFpbV91Nk5KZlJ3a2VZeXZSbHVqa2ptQ2xCV0VJ
-          QUl6YVN5RFJBb0FMSkJaMlB2TWxzMWFHTlJpNkhFa2cwLVF3SlVr
-          QUl6YVN5RHRUREwwMEhOQks2TVFGLTU3eThqS1NaZjk5NGIzWC0w
+          QUl6YVN5Q1kwQ1hBN2NDMUMxNzcwbHh5eWtadGpGbmpwNloxMlo0
+          QUl6YVN5QmhKWUdVT2NONk43N3ZXZS1OSDBJYWxIa2RXOWNwNzhv
+          QUl6YVN5Qlc3bHlNTzBCUUFFVXE0ekZ5X2VYU1cybko3a1l4WUFj
         SEED_COUNT: '1000'
-        UPDATE_FREQUENCY: '1000000000000000'
+        # interval in number of seconds to get data from the API
+        UPDATE_FREQUENCY: '50'
     volumes:
         - /app/node_modules
         - ./update-datastore-service:/app
 
+  # Sample React Application for Dashboard
   client:
     container_name: client
     build:
@@ -76,40 +122,6 @@ services:
     volumes:
         - /app/node_modules
         - ./client:/app
-
-  elasticsearch:
-    container_name: elasticsearch
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.14.0
-    volumes:
-        - elastic-data:/usr/share/elasticsearch/data
-    environment:
-        - discovery.type=single-node
-    ports:
-        - 9300:9300
-        - 9200:9200
-
-  kibana:
-    image: kibana:7.14.0
-    environment: 
-        SERVER_NAME: kibana
-        ELASTICSEARCH_URL: http://elasticsearch:9200
-    ports:
-        - 5601:5601
-
-   # logstash
-  logstash: 
-    image: docker.elastic.co/logstash/logstash:7.3.1
-    container_name: logstash
-    volumes: 
-         - ./logstash/pusher.conf:/usr/share/logstash/config/pusher.conf:ro
-         - ./logstash/logstash.yml:/usr/share/logstash/config/logstash.yml
-         - ./logstash/jdbc/postgresql-42.2.6.jar:/usr/share/logstash/logstash-core/lib/jars/postgresql-42.2.6.jar:ro
-    ports:
-        - '5044:5044'
-        - '9600:9600'
-    command: bash -c "/usr/share/logstash/bin/logstash-plugin install logstash-input-jdbc && logstash -f /usr/share/logstash/config/pusher.conf"
-    depends_on:
-        - elasticsearch
 
 volumes:
     elastic-data:
