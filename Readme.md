@@ -1,5 +1,7 @@
 # Scalable and Efficient Interest Filter over Youtube
 
+A filter over youtube videos based on user interest which could be speicified via keywords or tags, the application fetches latest results for those every few seconds and makes them available via REST endpoint in a paginated manner. Complex search and filters coulf be applied on the detched results via ElasticSearch. The application adopts the Microservice architecture and is designed with scalability in mind. All related results are persistent in a postgres database which is bulk written to in every few second. The Postgres db acts as the single source of truth snd ElasticSearch syncs with any updates made to the postgres db via logstash. All other operations are performed leveraging the scalable ElasticSearch cluster.
+
 Built as an assignment for Backend Development Intern position.
 
 Tech Stack - NodeJs, Express, PostgreSQL, Elastic Search, LogStash, Docker, Nginx
